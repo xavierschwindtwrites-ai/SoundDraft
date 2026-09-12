@@ -6,7 +6,27 @@ on:
 permissions:
   contents: write
 jobs:
+  audio-source:
+    name: Prepare verified audio source
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/cache@v4
+        with:
+          path: vendor/source
+          key: ffmpeg-source-${{ hashFiles('scripts/fetch-audio-source.cjs') }}
+      - name: Download or verify cached FFmpeg source
+        run: node scripts/fetch-audio-source.cjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: verified-ffmpeg-source
+          path: vendor/source/*.tar.xz
+          if-no-files-found: error
   mac:
+    needs: audio-source
     strategy:
       fail-fast: false
       matrix:
@@ -24,22 +44,45 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
+      - uses: actions/download-artifact@v4
+        with:
+          name: verified-ffmpeg-source
+          path: vendor/source
       - run: npm run build:audio -- ${{ matrix.arch }}
+        env:
+          SOUNDDRAFT_FFMPEG_SOURCE: ${{ github.workspace }}/vendor/source/ffmpeg-8.1.2.tar.xz
       - run: npm run build
       - run: npx electron-builder --mac --${{ matrix.arch }} --publish never
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
       - name: Checksums
-        run: shasum -a 256 release/*.dmg release/*.zip > release/SHA256-${{ matrix.arch }}.txt
+        working-directory: release
+        run: shasum -a 256 *.dmg *.zip > SHA256-${{ matrix.arch }}.txt
       - uses: actions/upload-artifact@v4
         with:
           name: SoundDraft-mac-${{ matrix.arch }}
+          if-no-files-found: error
           path: |
             release/*.dmg
             release/*.zip
             release/SHA256-*.txt
-      - name: Publish tagged release
-        if: startsWith(github.ref, 'refs/tags/')
+  release:
+    name: Assemble tagged release
+    needs: mac
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: SoundDraft-mac-*
+          merge-multiple: true
+          path: release
+      - name: Verify both installer architectures
+        working-directory: release
+        run: |
+          sha256sum --check SHA256-arm64.txt
+          sha256sum --check SHA256-x64.txt
+      - name: Publish complete draft release
         uses: softprops/action-gh-release@v2
         with:
           draft: true

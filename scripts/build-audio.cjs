@@ -3,8 +3,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const os = require("node:os");
 const { execFileSync } = require("node:child_process");
-const { createHash } = require("node:crypto");
-const version = "8.1.2";
+const { version, fetchSource } = require("./fetch-audio-source.cjs");
 const arch = process.argv[2] || process.arch;
 if (!["arm64", "x64"].includes(arch))
   throw new Error("Supported Mac architectures: arm64, x64");
@@ -12,28 +11,7 @@ const output = path.resolve("vendor", arch);
 fs.mkdirSync(output, { recursive: true });
 const work = fs.mkdtempSync(path.join(os.tmpdir(), "sounddraft-audio-build-"));
 const archive = path.join(work, `ffmpeg-${version}.tar.xz`);
-const supplied = process.env.SOUNDDRAFT_FFMPEG_SOURCE;
-if (supplied) fs.copyFileSync(supplied, archive);
-else
-  execFileSync(
-    "curl",
-    [
-      "--fail",
-      "--location",
-      "--retry",
-      "3",
-      `https://ffmpeg.org/releases/ffmpeg-${version}.tar.xz`,
-      "--output",
-      archive,
-    ],
-    { stdio: "inherit" },
-  );
-const hash = createHash("sha256")
-  .update(fs.readFileSync(archive))
-  .digest("hex");
-if (hash !== "464beb5e7bf0c311e68b45ae2f04e9cc2af88851abb4082231742a74d97b524c")
-  throw new Error("FFmpeg source checksum mismatch");
-console.log("Verified FFmpeg source SHA-256:", hash);
+fetchSource(archive);
 execFileSync("tar", ["-xf", archive, "-C", work]);
 const source = path.join(work, `ffmpeg-${version}`);
 const args = [

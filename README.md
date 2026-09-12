@@ -4,7 +4,7 @@ A local writing studio for authors who speak their first drafts. Import a record
 
 [![Verify](https://github.com/xavierschwindtwrites-ai/SoundDraft/actions/workflows/check.yml/badge.svg)](https://github.com/xavierschwindtwrites-ai/SoundDraft/actions/workflows/check.yml) [![Latest release](https://img.shields.io/github/v/release/xavierschwindtwrites-ai/SoundDraft?include_prereleases&label=download)](https://github.com/xavierschwindtwrites-ai/SoundDraft/releases/latest) [![License: MIT](https://img.shields.io/badge/license-MIT-456955.svg)](LICENSE)
 
-**[Download SoundDraft for Mac](https://github.com/xavierschwindtwrites-ai/SoundDraft/releases/latest)**
+**[Visit the SoundDraft website](https://xavierschwindtwrites-ai.github.io/SoundDraft/)** · **[Download SoundDraft for Mac](https://github.com/xavierschwindtwrites-ai/SoundDraft/releases/latest)**
 
 ![SoundDraft formatting review](docs/formatting-review.png)
 
